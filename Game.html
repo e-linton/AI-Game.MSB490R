@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vocablo</title>
+  <style>
+  :root {
+    --bg: #0f172a;
+    --panel: rgba(255, 248, 236, 0.88);
+    --panel-strong: #fff4dc;
+    --text: #f8fafc;
+    --muted: #e5e7eb;
+    --tile: #f8efe0;
+    --tile-border: rgba(122, 92, 58, 0.28);
+    --absent: #4b5563;
+    --present: #d97706;
+    --correct: #16a34a;
+    --accent: #c62828;
+    --accent-2: #f59e0b;
+    --danger: #dc2626;
+    --shadow: rgba(2, 6, 23, 0.35);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    color: var(--text);
+    background:
+      radial-gradient(circle at top left, rgba(245, 158, 11, 0.25), transparent 28%),
+      radial-gradient(circle at top right, rgba(198, 40, 40, 0.24), transparent 26%),
+      radial-gradient(circle at bottom, rgba(22, 163, 74, 0.15), transparent 32%),
+      linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(135deg, rgba(255,255,255,0.06) 0 12%, transparent 12% 24%, rgba(255,255,255,0.04) 24% 36%, transparent 36% 100%);
+    opacity: 0.35;
+  }
+
+  .app {
+    width: min(100%, 760px);
+    background: linear-gradient(180deg, rgba(255, 250, 240, 0.96), rgba(255, 242, 220, 0.92));
+    border: 1px solid rgba(255,255,255,0.28);
+    border-radius: 28px;
+    box-shadow: 0 24px 70px var(--shadow);
+    overflow: hidden;
+    backdrop-filter: blur(12px);
+    position: relative;
+  }
+
+  .app::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 10px;
+    background: linear-gradient(90deg, #c62828 0 34%, #f59e0b 34% 66%, #1d4ed8 66% 100%);
+  }
+
+  header {
+    padding: 22px 20px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px solid rgba(122, 92, 58, 0.16);
+    color: #1f2937;
+  }
+
+  .brand {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 1.9rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #9f1239;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.7);
+  }
+
+  .tagline {
+    color: #6b4f3b;
+    font-size: 0.95rem;
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  button {
+    appearance: none;
+    border: none;
+    border-radius: 14px;
+    padding: 11px 15px;
+    font-weight: 800;
+    cursor: pointer;
+    color: white;
+    background: linear-gradient(180deg, #374151, #1f2937);
+    transition: transform 0.12s ease, filter 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 8px 18px rgba(31, 41, 55, 0.18);
+  }
+
+  button:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.06);
+  }
+
+  button:active { transform: translateY(0); }
+
+  .primary {
+    background: linear-gradient(180deg, #dc2626, #9f1239);
+    box-shadow: 0 10px 20px rgba(220, 38, 38, 0.22);
+  }
+
+  .secondary {
+    background: linear-gradient(180deg, #f59e0b, #d97706);
+    box-shadow: 0 10px 20px rgba(245, 158, 11, 0.22);
+  }
+
+  .danger {
+    background: linear-gradient(180deg, #ef4444, #b91c1c);
+  }
+
+  .status {
+    padding: 14px 20px 0;
+    min-height: 30px;
+    color: #7c2d12;
+    font-size: 1rem;
+    text-align: center;
+    font-weight: 700;
+  }
+
+  .game-wrap {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 18px 16px 20px;
+  }
+
+  .board {
+    display: grid;
+    grid-template-rows: repeat(6, 1fr);
+    gap: 9px;
+    width: min(100%, 360px);
+    margin: 0 auto;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 9px;
+  }
+
+  .tile {
+    aspect-ratio: 1 / 1;
+    border: 2px solid var(--tile-border);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(1.3rem, 4vw, 2rem);
+    font-weight: 900;
+    text-transform: uppercase;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255, 244, 228, 0.98));
+    color: #7c2d12;
+    user-select: none;
+    box-shadow:
+      inset 0 -4px 0 rgba(0,0,0,0.05),
+      0 4px 10px rgba(124, 45, 18, 0.06);
+    transition: transform 0.12s ease, background 0.2s ease, border-color 0.2s ease;
+  }
+
+  .tile.filled {
+    border-color: rgba(159, 18, 57, 0.35);
+    animation: pop 0.1s ease;
+    transform: translateY(-1px);
+  }
+
+  .tile.correct {
+    background: linear-gradient(180deg, #4ade80, #16a34a);
+    border-color: #15803d;
+    color: white;
+  }
+
+  .tile.present {
+    background: linear-gradient(180deg, #fbbf24, #d97706);
+    border-color: #b45309;
+    color: white;
+  }
+
+  .tile.absent {
+    background: linear-gradient(180deg, #6b7280, #4b5563);
+    border-color: #374151;
+    color: white;
+  }
+
+  @keyframes pop {
+    from { transform: scale(0.95); }
+    to { transform: scale(1); }
+  }
+
+  .keyboard {
+    display: grid;
+    gap: 8px;
+    width: min(100%, 640px);
+    margin: 0 auto;
+  }
+
+  .kb-row {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .key {
+    min-width: 38px;
+    height: 50px;
+    padding: 0 12px;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #fb923c, #ea580c);
+    color: white;
+    font-weight: 900;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    box-shadow: 0 8px 16px rgba(234, 88, 12, 0.18);
+    border: 1px solid rgba(255,255,255,0.22);
+  }
+
+  .key:hover {
+    filter: brightness(1.05);
+  }
+
+  .key.wide { min-width: 70px; }
+
+  .key.correct {
+    background: linear-gradient(180deg, #4ade80, #16a34a);
+  }
+
+  .key.present {
+    background: linear-gradient(180deg, #fbbf24, #d97706);
+  }
+
+  .key.absent {
+    background: linear-gradient(180deg, #64748b, #475569);
+  }
+
+  .key.special {
+    background: linear-gradient(180deg, #1d4ed8, #1e3a8a);
+  }
+
+  .footer {
+    padding: 0 20px 22px;
+    color: #7c4a2b;
+    font-size: 0.94rem;
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  .card {
+    margin: 0 auto;
+    width: min(100%, 680px);
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(122, 92, 58, 0.14);
+    border-radius: 20px;
+    padding: 14px;
+    box-shadow: 0 10px 24px rgba(124, 45, 18, 0.06);
+  }
+
+  .info {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    text-align: center;
+  }
+
+  .pill {
+    background: linear-gradient(180deg, rgba(255,255,255,0.75), rgba(255,248,236,0.9));
+    border-radius: 16px;
+    padding: 12px 10px;
+    color: #4b2e1f;
+    border: 1px solid rgba(122, 92, 58, 0.12);
+  }
+
+  .pill strong {
+    display: block;
+    font-size: 1.02rem;
+    margin-top: 4px;
+    color: #7c2d12;
+  }
+
+  .hidden { display: none; }
+
+  @media (max-width: 560px) {
+    header { flex-direction: column; align-items: stretch; }
+    .controls { justify-content: center; }
+    .info { grid-template-columns: 1fr; }
+    .key { min-width: 32px; height: 46px; padding: 0 10px; }
+    .key.wide { min-width: 62px; }
+  }
+</style>
+</head>
+<body>
+  <main class="app" aria-label="Spanish Wordle style game">
+    <header>
+      <div class="brand">
+        <h1>Vocablo</h1>
+        <div class="tagline">A Spanish Wordle-style game with 5-letter words</div>
+      </div>
+      <div class="controls">
+        <button id="newGameBtn" class="primary">New Game</button>
+        <button id="toggleHelpBtn" class="secondary">How to Play</button>
+      </div>
+    </header>
+
+    <div id="status" class="status" aria-live="polite">Guess the hidden Spanish word in 6 tries.</div>
+
+    <section class="game-wrap">
+      <div id="helpCard" class="card hidden" aria-hidden="true">
+        <div class="info">
+          <div class="pill">Green<strong>Correct letter, correct spot</strong></div>
+          <div class="pill">Yellow<strong>Correct letter, wrong spot</strong></div>
+          <div class="pill">Gray<strong>Letter not in the word</strong></div>
+        </div>
+      </div>
+
+      <div id="board" class="board" aria-label="Game board"></div>
+      <div id="keyboard" class="keyboard" aria-label="On-screen keyboard"></div>
+    </section>
+
+    <div class="footer">
+      Type with your keyboard or tap the on-screen keys. Words are 5 letters long and must be valid Spanish words.
+    </div>
+  </main>
+
+  <script>
+    const WORDS = [
+      'amigo','antes','arena','barco','bello','brisa','calma','campo','canto','carro',
+      'casao','cazar','cegar','cerro','chico','claro','comer','costa','crear','cruce',
+      'cubro','dados','danza','dejar','delga','dices','digno','dolor','donde','duros',
+      'edito','ellas','enero','entra','error','espia','estar','exito',
+      'extra','falta','feliz','firme','flota','fondo','forma','fruta','fuego',
+      'ganar','gatos','gente','golpe','grado','grano','grito','grupo','guapo','hacer',
+      'hasta','herir','hielo','hilar','hondo','horno','hotel','huevo','ideas','igles',
+      'jamas','joven','juego','junta','lados','largo','leche','libro','lindo','lista',
+      'lucha','luego','lugar','luzco','manos','marco','marea','miedo','minas','modoz',
+      'mojar','mundo','nacer','nariz','nieve','noche','nubes','ocaso','orden','padre',
+      'pagar','pared','parir','parte','pasto','pecho','perro','pesar','piano','pieza',
+      'poder','polvo','poner','poros','prado','presa','punto','ramos','razon',
+      'reina','risa','robar','rocas','rueda','saber','sacar','salir','salsa','santo',
+      'sedes','señal','serio','siete','silla','sobre','soles','suave','tabla','tarde',
+      'taxis','techo','tener','tigre','tocar','tonto','torre','toser','traje',
+      'trigo','tumba','vacio','vapor','vasos','venir','verde','verbo','viaje','voces',
+      'volar','yendo','zorro','zetas','pulir'
+    ].map(w => w.toLowerCase());
+
+    // A few entries above are intended as game-friendly Spanish roots/forms.
+    // The validator uses the same list for a clean classroom-friendly build.
+    const MAX_ROWS = 6;
+    const WORD_LENGTH = 5;
+    const keyboardRows = [
+      ['q','w','e','r','t','y','u','i','o','p'],
+      ['a','s','d','f','g','h','j','k','l','ñ'],
+      ['Enter','z','x','c','v','b','n','m','⌫']
+    ];
+
+    const boardEl = document.getElementById('board');
+    const keyboardEl = document.getElementById('keyboard');
+    const statusEl = document.getElementById('status');
+    const newGameBtn = document.getElementById('newGameBtn');
+    const toggleHelpBtn = document.getElementById('toggleHelpBtn');
+    const helpCard = document.getElementById('helpCard');
+
+    let secret = '';
+    let currentRow = 0;
+    let currentCol = 0;
+    let currentGuess = '';
+    let gameOver = false;
+    let tiles = [];
+    let keyButtons = new Map();
+
+    function normalize(word) {
+      return word
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+    }
+
+    function buildBoard() {
+      boardEl.innerHTML = '';
+      tiles = [];
+      for (let r = 0; r < MAX_ROWS; r++) {
+        const row = document.createElement('div');
+        row.className = 'row';
+        const rowTiles = [];
+        for (let c = 0; c < WORD_LENGTH; c++) {
+          const tile = document.createElement('div');
+          tile.className = 'tile';
+          tile.setAttribute('aria-label', `Row ${r + 1} column ${c + 1}`);
+          row.appendChild(tile);
+          rowTiles.push(tile);
+        }
+        boardEl.appendChild(row);
+        tiles.push(rowTiles);
+      }
+    }
+
+    function buildKeyboard() {
+      keyboardEl.innerHTML = '';
+      keyButtons.clear();
+      keyboardRows.forEach(rowKeys => {
+        const row = document.createElement('div');
+        row.className = 'kb-row';
+        rowKeys.forEach(key => {
+          const btn = document.createElement('button');
+          btn.className = 'key';
+          if (key === 'Enter' || key === '⌫') btn.classList.add('wide', 'special');
+          btn.textContent = key;
+          btn.dataset.key = key;
+          btn.addEventListener('click', () => handleKey(key));
+          row.appendChild(btn);
+          if (/^[a-zñ]$/i.test(key)) keyButtons.set(key.toLowerCase(), btn);
+        });
+        keyboardEl.appendChild(row);
+      });
+    }
+
+    function chooseSecret() {
+      secret = WORDS[Math.floor(Math.random() * WORDS.length)];
+      // Ensure a valid 5-letter target.
+      if (secret.length !== WORD_LENGTH) {
+        secret = 'carta';
+      }
+    }
+
+    function resetGame() {
+      chooseSecret();
+      currentRow = 0;
+      currentCol = 0;
+      currentGuess = '';
+      gameOver = false;
+      statusEl.textContent = 'Guess the hidden Spanish word in 6 tries.';
+      tiles.flat().forEach(tile => {
+        tile.textContent = '';
+        tile.className = 'tile';
+      });
+      keyButtons.forEach(btn => btn.className = 'key');
+      keyboardRows.flat().forEach(key => {
+        if (key === 'Enter' || key === '⌫') return;
+        const btn = keyButtons.get(key);
+        if (btn) btn.className = 'key';
+      });
+    }
+
+    function setStatus(message, danger = false) {
+      statusEl.textContent = message;
+      statusEl.style.color = danger ? '#f59e0b' : '#1d4ed8';
+    }
+
+    function applyKeyStyle(letter, status) {
+      const btn = keyButtons.get(letter);
+      if (!btn) return;
+      const priority = { absent: 1, present: 2, correct: 3 };
+      const current = btn.dataset.state || 'none';
+      if (priority[status] >= priority[current]) {
+        btn.dataset.state = status;
+        btn.classList.remove('correct', 'present', 'absent');
+        btn.classList.add(status);
+      }
+    }
+
+    function markRow(guess) {
+      const answer = normalize(secret).split('');
+      const letters = guess.split('');
+      const result = Array(WORD_LENGTH).fill('absent');
+      const used = Array(WORD_LENGTH).fill(false);
+
+      // First pass: correct positions.
+      for (let i = 0; i < WORD_LENGTH; i++) {
+        if (letters[i] === answer[i]) {
+          result[i] = 'correct';
+          used[i] = true;
+        }
+      }
+
+      // Second pass: present elsewhere.
+      for (let i = 0; i < WORD_LENGTH; i++) {
+        if (result[i] === 'correct') continue;
+        for (let j = 0; j < WORD_LENGTH; j++) {
+          if (!used[j] && letters[i] === answer[j]) {
+            result[i] = 'present';
+            used[j] = true;
+            break;
+          }
+        }
+      }
+
+      result.forEach((state, i) => {
+        tiles[currentRow][i].classList.add(state);
+        applyKeyStyle(guess[i], state);
+      });
+    }
+
+    function submitGuess() {
+      if (currentGuess.length !== WORD_LENGTH) {
+        setStatus('Your guess needs to be 5 letters long.', true);
+        return;
+      }
+
+      const guess = normalize(currentGuess);
+      if (!WORDS.includes(guess)) {
+        setStatus('That word is not in the Spanish word list for this game.', true);
+        shakeCurrentRow();
+        return;
+      }
+
+      markRow(guess);
+
+      if (guess === normalize(secret)) {
+        gameOver = true;
+        setStatus(`¡Ganaste! The word was "${secret.toUpperCase()}".`);
+        return;
+      }
+
+      currentRow++;
+      currentCol = 0;
+      currentGuess = '';
+
+      if (currentRow >= MAX_ROWS) {
+        gameOver = true;
+        setStatus(`Game over. The word was "${secret.toUpperCase()}".`);
+      } else {
+        const triesLeft = MAX_ROWS - currentRow;
+
+        if (triesLeft === 1) {
+          setStatus(`Keep going. You have 1 try left.`);
+        } else {
+        setStatus(`Keep going. You have ${triesLeft} tries left.`);
+        }
+      }
+    }
+
+    function shakeCurrentRow() {
+      const row = boardEl.children[currentRow];
+      row.animate(
+        [
+          { transform: 'translateX(0)' },
+          { transform: 'translateX(-6px)' },
+          { transform: 'translateX(6px)' },
+          { transform: 'translateX(-4px)' },
+          { transform: 'translateX(4px)' },
+          { transform: 'translateX(0)' }
+        ],
+        { duration: 250, easing: 'ease-in-out' }
+      );
+    }
+
+    function handleKey(key) {
+      if (gameOver && key !== 'Enter') return;
+
+      if (key === 'Enter') {
+        submitGuess();
+        return;
+      }
+
+      if (key === '⌫') {
+        if (currentCol > 0) {
+          currentCol--;
+          currentGuess = currentGuess.slice(0, -1);
+          tiles[currentRow][currentCol].textContent = '';
+          tiles[currentRow][currentCol].classList.remove('filled');
+        }
+        return;
+      }
+
+      if (/^[a-zñ]$/i.test(key) && currentCol < WORD_LENGTH) {
+        tiles[currentRow][currentCol].textContent = key.toUpperCase();
+        tiles[currentRow][currentCol].classList.add('filled');
+        currentGuess += key.toLowerCase();
+        currentCol++;
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      const key = e.key;
+      if (key === 'Backspace') {
+        e.preventDefault();
+        handleKey('⌫');
+      } else if (key === 'Enter') {
+        e.preventDefault();
+        handleKey('Enter');
+      } else if (/^[a-zA-ZñÑ]$/.test(key)) {
+        handleKey(key.toLowerCase());
+      }
+    });
+
+    newGameBtn.addEventListener('click', resetGame);
+    toggleHelpBtn.addEventListener('click', () => {
+      const visible = !helpCard.classList.contains('hidden');
+      helpCard.classList.toggle('hidden');
+      helpCard.setAttribute('aria-hidden', visible ? 'true' : 'false');
+      toggleHelpBtn.textContent = visible ? 'How to Play' : 'Hide Help';
+    });
+
+    buildBoard();
+    buildKeyboard();
+    resetGame();
+  </script>
+</body>
+</html>
